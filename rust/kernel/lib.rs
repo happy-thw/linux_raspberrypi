@@ -63,6 +63,8 @@ pub mod task;
 pub mod types;
 pub mod user_ptr;
 pub mod completion;
+pub mod timekeeping;
+pub mod miscdev;
 pub mod irq;
 
 #[doc(hidden)]
