@@ -396,6 +396,12 @@ void rust_helper_memcpy_fromio(void *to, const volatile void __iomem *from, long
 }
 EXPORT_SYMBOL_GPL(rust_helper_memcpy_fromio);
 
+void rust_helper_clk_disable_unprepare(struct clk *clk)
+{
+	return clk_disable_unprepare(clk);
+}
+EXPORT_SYMBOL_GPL(rust_helper_clk_disable_unprepare);
+
 /*
  * `bindgen` binds the C `size_t` type as the Rust `usize` type, so we can
  * use it in contexts where Rust expects a `usize` like slice (array) indices.

@@ -28,6 +28,11 @@ impl Resource {
             size: end.checked_sub(start)?.checked_add(1)?,
         })
     }
+
+    /// Return resource base start
+    pub fn get_offset(&self) -> bindings::resource_size_t {
+        self.offset
+    }
 }
 
 /// Represents a memory block of at least `SIZE` bytes.
@@ -141,7 +146,7 @@ impl<const SIZE: usize> IoMem<SIZE> {
     /// Callers must ensure that either (a) the resulting interface cannot be used to initiate DMA
     /// operations, or (b) that DMA operations initiated via the returned interface use DMA handles
     /// allocated through the `dma` module.
-    pub unsafe fn try_new(res: Resource) -> Result<Self> {
+    pub unsafe fn try_new(res: &Resource) -> Result<Self> {
         // Check that the resource has at least `SIZE` bytes in it.
         if res.size < SIZE.try_into()? {
             return Err(EINVAL);
@@ -164,6 +169,11 @@ impl<const SIZE: usize> IoMem<SIZE> {
             // also 8-byte aligned because we checked it above.
             Ok(Self { ptr: addr as usize })
         }
+    }
+
+    /// Return the base addr
+    pub fn get(&self) -> *mut u8 {
+        self.ptr as *mut u8
     }
 
     #[inline]

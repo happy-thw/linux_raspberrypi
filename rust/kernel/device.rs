@@ -6,11 +6,13 @@
 
 use crate::{
     bindings,
-    error::Result,
+    error::{Result, from_err_ptr, code::*,},
     macros::pin_data,
     pin_init, pr_crit,
     str::CStr,
     sync::{lock::mutex, lock::Guard, LockClassKey, Mutex, UniqueArc},
+    clk::Clk,
+    dev_err,
 };
 use core::{
     fmt,
@@ -194,7 +196,22 @@ impl Device {
         // requirements.
         unsafe { Self::new(dev.raw_device()) }
     }
+
+    /// Get default clk from dev
+    pub fn clk_get(&self) -> Result<&mut Clk> {
+        // SAFETY: call ffi and ptr is valid
+        let raw = unsafe {
+            from_err_ptr(bindings::devm_clk_get(self.ptr, core::ptr::null()))?
+        };
+
+        if raw.is_null() {
+            dev_err!(self,"not found clk");
+            return Err(ENODEV);
+        } 
+        Ok(Clk::from_raw(raw))
+    }
 }
+
 
 // SAFETY: The device returned by `raw_device` is the one for which we hold a reference.
 unsafe impl RawDevice for Device {
