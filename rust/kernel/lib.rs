@@ -22,6 +22,7 @@
 #![feature(receiver_trait)]
 #![feature(unsize)]
 #![feature(const_mut_refs)]
+#![feature(const_maybe_uninit_zeroed)]
 
 // Ensure conditional compilation based on the kernel configuration works;
 // otherwise we may silently break things like initcall handling.
@@ -72,6 +73,8 @@ pub mod user_ptr;
 pub mod completion;
 pub mod timekeeping;
 pub mod irq;
+pub mod clk;
+
 
 #[doc(hidden)]
 pub use bindings;
@@ -113,6 +116,13 @@ impl ThisModule {
     /// The pointer must be equal to the right `THIS_MODULE`.
     pub const unsafe fn from_ptr(ptr: *mut bindings::module) -> ThisModule {
         ThisModule(ptr)
+    }
+
+    /// Access the raw pointer for this module.
+    ///
+    /// It is up to the user to use it correctly.
+    pub const fn as_ptr(&self) -> *mut bindings::module {
+        self.0
     }
 
 }
