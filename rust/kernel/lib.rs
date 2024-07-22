@@ -74,7 +74,7 @@ pub mod completion;
 pub mod timekeeping;
 pub mod irq;
 pub mod clk;
-
+pub mod serial;
 
 #[doc(hidden)]
 pub use bindings;
