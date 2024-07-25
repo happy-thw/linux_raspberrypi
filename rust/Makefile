@@ -474,6 +474,7 @@ obj-$(CONFIG_RUST) += cargo_driver.o
 # that need to be excluded here. 
 # They will be removed when the cargo_driver is actually generated.
 CARGO_EXCLUDE_OBJ := gpio_rpbled_linux_adapt 
+CARGO_EXCLUDE_OBJ += i2c_bcm2835_rust 
 # cargo-gpio_dw_linux_adapt
 
 # get target from rust_flags
