@@ -152,7 +152,7 @@ struct uart_amba_port {
 	bool			rs485_tx_started;
 	unsigned int		rs485_tx_drain_interval; /* usecs */
 };
-
+	
 static unsigned int pl011_tx_empty(struct uart_port *port);
 
 static unsigned int pl011_reg_to_offset(const struct uart_amba_port *uap,
