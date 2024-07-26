@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0
 
 //! BCM2835 master mode driver
-
-use kernel::prelude::*;
-use kernel::{clk::Clk, device::Device, io_mem::IoMem, macros::module};
+use i2c::I2cMsg;
+use kernel::{
+    clk::Clk, completion::Completion, device::Device, io_mem::IoMem, macros::module, prelude::*,
+};
 
 use bitflags::bitflags;
 
@@ -67,14 +68,14 @@ bitflags! {
     }
 }
 
-/// 
+///
 pub const BCM2835_I2C_FEDL_SHIFT: u32 = 16;
-/// 
+///
 pub const BCM2835_I2C_REDL_SHIFT: u32 = 0;
 
-/// 
+///
 pub const BCM2835_I2C_CDIV_MIN: u32 = 0x0002;
-/// 
+///
 pub const BCM2835_I2C_CDIV_MAX: u32 = 0xFFFE;
 
 // Wait for implemented Debug feature
@@ -92,11 +93,13 @@ struct Bcm2835I2cResources {
     irq: i32,
     regs: IoMem<I2C_SIZE>,
     // adapter: Adapter<Bcm2835I2cDev>,
+    completion: Completion,
+    curr_msg: I2cMsg,
     bus_clk: Clk,
     num_msgs: i32,
     // omit debug fields for now.
     // msg_err: u32,
-    // msg_buf: [u8; 16],
+    // msg_buf: Vec<u8>,
     // msg_buf_remaining: usize,
     // debug: [Option<BCM2835_Debug>; 4]
     // debug_num: u32,
@@ -145,4 +148,3 @@ impl Drop for Bcm2835I2cDev {
         pr_info!("BCM2835 i2c bus device driver (exit)\n");
     }
 }
-
