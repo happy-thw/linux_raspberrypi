@@ -56,6 +56,17 @@ impl ClkHw {
         Ok(())
     }
     */
+
+    // Unsafe: Argumets Wrapped in CStr.
+    unsafe fn register_clkdev(&mut self, con_id: &'static CStr, dev_id: &'static CStr) -> i32 {
+        unsafe {
+            bindings::clk_hw_register_clkdev(
+                self.0.get(),
+                con_id.as_char_ptr(),
+                dev_id.as_char_ptr(),
+            )
+        }
+    }
 }
 
 /*
