@@ -35,47 +35,50 @@ extern crate self as kernel;
 #[cfg(not(test))]
 #[cfg(not(testlib))]
 mod allocator;
-mod build_assert;
-pub mod cred;
-pub mod device;
-pub mod delay;
-pub mod error;
-pub mod driver;
-pub mod platform;
-pub mod file;
-pub mod fs;
-pub mod init;
-pub mod io_buffer;
-pub mod gpio;
-pub mod fwnode;
-pub mod io_mem;
 #[cfg(CONFIG_ARM_AMBA)]
 pub mod amba;
+mod build_assert;
+pub mod clk;
+pub mod clk_hw;
+pub mod completion;
+pub mod cred;
+pub mod delay;
+pub mod device;
+pub mod driver;
+pub mod error;
+pub mod file;
+pub mod fs;
+pub mod fwnode;
+pub mod gpio;
+pub mod init;
+pub mod io_buffer;
+pub mod io_mem;
 #[cfg(CONFIG_IOMMU_IO_PGTABLE)]
 pub mod io_pgtable;
 pub mod ioctl;
+pub mod iov_iter;
+pub mod irq;
 #[cfg(CONFIG_KUNIT)]
 pub mod kunit;
-pub mod of;
-pub mod iov_iter;
 pub mod mm;
+pub mod module_param;
+pub mod of;
 pub mod pages;
+pub mod platform;
 pub mod prelude;
 pub mod print;
+pub mod serial;
 mod static_assert;
 #[doc(hidden)]
 pub mod std_vendor;
 pub mod str;
 pub mod sync;
 pub mod task;
+pub mod timekeeping;
 pub mod types;
 pub mod user_ptr;
-pub mod completion;
-pub mod timekeeping;
-pub mod irq;
-pub mod clk;
-pub mod serial;
-pub mod clk_hw;
+
+use core::marker::PhantomData;
 
 #[doc(hidden)]
 pub use bindings;
@@ -126,7 +129,44 @@ impl ThisModule {
         self.0
     }
 
+    /// Locks the module parameters to access them.
+    ///
+    /// Returns a [`KParamGuard`] that will release the lock when dropped.
+    pub fn kernel_param_lock(&self) -> KParamGuard<'_> {
+        // SAFETY: `kernel_param_lock` will check if the pointer is null and
+        // use the built-in mutex in that case.
+        #[cfg(CONFIG_SYSFS)]
+        unsafe {
+            bindings::kernel_param_lock(self.0)
+        }
+
+        KParamGuard {
+            #[cfg(CONFIG_SYSFS)]
+            this_module: self,
+            phantom: PhantomData,
+        }
+    }
 }
+
+/// Scoped lock on the kernel parameters of [`ThisModule`].
+///
+/// Lock will be released when this struct is dropped.
+pub struct KParamGuard<'a> {
+    #[cfg(CONFIG_SYSFS)]
+    this_module: &'a ThisModule,
+    phantom: PhantomData<&'a ()>,
+}
+
+#[cfg(CONFIG_SYSFS)]
+impl<'a> Drop for KParamGuard<'a> {
+    fn drop(&mut self) {
+        // SAFETY: `kernel_param_lock` will check if the pointer is null and
+        // use the built-in mutex in that case. The existence of `self`
+        // guarantees that the lock is held.
+        unsafe { bindings::kernel_param_unlock(self.this_module.0) }
+    }
+}
+
 /// Calculates the offset of a field from the beginning of the struct it belongs to.
 ///
 /// # Example
@@ -195,7 +235,7 @@ macro_rules! container_of {
 fn panic(info: &core::panic::PanicInfo<'_>) -> ! {
     pr_emerg!("{}\n", info);
     // SAFETY: FFI call.
-    unsafe { bindings::BUG() };
+    unsafe { bindings::BUG() }
 }
 
 /// Page size defined in terms of the `PAGE_SHIFT` macro from C.

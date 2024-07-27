@@ -102,6 +102,19 @@ module! {
     author:"<NAME> <<EMAIL>>",
     description:"BCM2835 I2C driver (written in rust)",
     license:"GPL",
+    alias: ["platform:i2c_bcm2835"],
+    params: {
+        debug: u32 {
+            default: 0,
+            permissions: 0o644,
+            description: "1=err, 2=isr, 3=xfer",
+        },
+        clk_out_ms: u32 {
+            default: 35,
+            permissions: 0o644,
+            description: "clock-stretch timeout (mS)",
+        },
+    },
 }
 
 // test

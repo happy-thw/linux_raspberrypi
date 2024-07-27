@@ -18,6 +18,16 @@ pub(crate) fn try_literal(it: &mut token_stream::IntoIter) -> Option<String> {
     }
 }
 
+pub(crate) fn try_byte_string(it: &mut token_stream::IntoIter) -> Option<String> {
+    try_literal(it).and_then(|byte_string| {
+        if byte_string.starts_with("b\"") && byte_string.ends_with('\"') {
+            Some(byte_string[2..byte_string.len() - 1].to_string())
+        } else {
+            None
+        }
+    })
+}
+
 pub(crate) fn try_string(it: &mut token_stream::IntoIter) -> Option<String> {
     try_literal(it).and_then(|string| {
         if string.starts_with('\"') && string.ends_with('\"') {
@@ -46,6 +56,10 @@ pub(crate) fn expect_punct(it: &mut token_stream::IntoIter) -> char {
     }
 }
 
+pub(crate) fn expect_literal(it: &mut token_stream::IntoIter) -> String {
+    try_literal(it).expect("Expected Literal")
+}
+
 pub(crate) fn expect_string(it: &mut token_stream::IntoIter) -> String {
     try_string(it).expect("Expected string")
 }
@@ -70,16 +84,32 @@ pub(crate) fn expect_end(it: &mut token_stream::IntoIter) {
     }
 }
 
+pub(crate) fn get_literal(it: &mut token_stream::IntoIter, expected_name: &str) -> String {
+    assert_eq!(expect_ident(it), expected_name);
+    assert_eq!(expect_punct(it), ':');
+    let literal = expect_literal(it);
+    assert_eq!(expect_punct(it), ',');
+    literal
+}
+
+pub(crate) fn get_string(it: &mut token_stream::IntoIter, expected_name: &str) -> String {
+    assert_eq!(expect_ident(it), expected_name);
+    assert_eq!(expect_punct(it), ':');
+    let string = expect_string(it);
+    assert_eq!(expect_punct(it), ',');
+    string
+}
+
 pub(crate) fn expect_string_initcall(it: &mut token_stream::IntoIter) -> String {
     let string = try_string(it).expect("Expected string");
     let initcall = match string.as_str() {
-        "core"     => ".initcall1.init".to_string(),
+        "core" => ".initcall1.init".to_string(),
         "postcore" => ".initcall2.init".to_string(),
-        "arch"     => ".initcall3.init".to_string(),
-        "subsys"   => ".initcall4.init".to_string(),
-        "fs"       => ".initcall5.init".to_string(),
-        "device"   => ".initcall6.init".to_string(),
-        "late"     => ".initcall7.init".to_string(),
+        "arch" => ".initcall3.init".to_string(),
+        "subsys" => ".initcall4.init".to_string(),
+        "fs" => ".initcall5.init".to_string(),
+        "device" => ".initcall6.init".to_string(),
+        "late" => ".initcall7.init".to_string(),
         _ => panic!("Expected Initcall"),
     };
     initcall
