@@ -7,6 +7,7 @@
 use crate::{
     bindings,
     error::{to_result, Result},
+    str::CStr,
     types::Opaque,
 };
 
@@ -30,6 +31,15 @@ impl ClkHw {
         self.0.get()
     }
 
+    pub fn register_clkdev(&mut self, con_id: &'static CStr, dev_id: &'static CStr) -> i32 {
+        unsafe {
+            bindings::clk_hw_register_clkdev(
+                self.0.get(),
+                con_id.as_char_ptr(),
+                dev_id.as_char_ptr(),
+            )
+        }
+    }
     // How to implement clk_hw api?
     /*
     pub fn prepare_enable(&mut self) -> Result {
