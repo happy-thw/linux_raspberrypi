@@ -40,6 +40,7 @@ pub mod amba;
 mod build_assert;
 pub mod clk;
 pub mod clk_hw;
+pub mod clk_provider;
 pub mod completion;
 pub mod cred;
 pub mod delay;
