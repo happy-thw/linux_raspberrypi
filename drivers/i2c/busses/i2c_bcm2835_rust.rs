@@ -3,7 +3,8 @@
 //! BCM2835 master mode driver
 use i2c::I2cMsg;
 use kernel::{
-    clk::Clk, completion::Completion, device::Device, io_mem::IoMem, macros::module, prelude::*,
+    clk::Clk, clk_hw::ClkHw, completion::Completion, container_of, device::Device, io_mem::IoMem,
+    macros::module, prelude::*,
 };
 
 use bitflags::bitflags;
@@ -78,6 +79,8 @@ pub const BCM2835_I2C_CDIV_MIN: u32 = 0x0002;
 ///
 pub const BCM2835_I2C_CDIV_MAX: u32 = 0xFFFE;
 
+// static in C code
+pub const CLK_TOUT_MS: u32 = 35;
 // Wait for implemented Debug feature
 #[allow(unused)]
 struct Bcm2835Debug {
@@ -88,7 +91,7 @@ struct Bcm2835Debug {
 }
 
 #[allow(unused)]
-struct Bcm2835I2cResources {
+struct Bcm2835I2cDev {
     dev: Device,
     irq: i32,
     regs: IoMem<I2C_SIZE>,
@@ -109,10 +112,10 @@ struct Bcm2835I2cResources {
 #[allow(unused)]
 struct Bcm2835I2cData {}
 
-struct Bcm2835I2cDev {}
+struct Bcm2835I2cDevice;
 
 module! {
-    type: Bcm2835I2cDev,
+    type: Bcm2835I2cDevice,
     name:"i2c_bcm2835_rust",
     author:"<NAME> <<EMAIL>>",
     description:"BCM2835 I2C driver (written in rust)",
@@ -135,15 +138,81 @@ fn bcm2835_i2c_readl(_i2c_dev: &mut Bcm2835I2cDev, _reg: usize) -> u32 {
     0
 }
 
-impl kernel::Module for Bcm2835I2cDev {
+fn to_clk_bcm2835_i2c(_hw: &mut ClkHw) -> &mut ClkBcm2835I2c {
+    container_of!(_hw, ClkBcm2835I2c, hw)
+}
+struct ClkBcm2835I2c {
+    hw: ClkHw,
+    i2c_dev: Bcm2835I2cDev,
+}
+
+fn clk_bcm2835_i2c_calc_divider(rate: u64, parent_rate: u64) -> Result<u64> {
+    let divider = parent_rate.div_ceil(rate);
+
+    /*
+     * Per the datasheet, the register is always interpreted as an even
+     * number, by rounding down. In other words, the LSB is ignored. So,
+     * if the LSB is set, increment the divider to avoid any issue.
+     */
+    if (divider & 0x1) != 0 {
+        divider += 1;
+    }
+    if ((divier < BCM2835_I2C_CDIV_MIN) || (divider > BCM2835_I2C_CDIV_MAX)) {
+        return Err(error::code::EINVAL);
+    }
+
+    return divider;
+}
+
+fn clk_bcm2835_i2c_set_rate(hw: &mut ClkHw, rate: u64, parent_rate: u64) -> Result<()> {
+    let div = to_clk_bcm2835_i2c(&mut hw);
+    let divider = clk_bcm2835_i2c_calc_divider(rate, parent_rate)?;
+
+    bcm2835_i2c_writel(&mut div.i2c_dev, BCM2835_I2C_DIV, divider);
+
+    /*
+     * Number of core clocks to wait after falling edge before
+     * outputting the next data bit.  Note that both FEDL and REDL
+     * can't be greater than CDIV/2.
+     */
+    let fedl = max(divider / 16, 1u);
+
+    /*
+     * Number of core clocks to wait after rising edge before
+     * sampling the next incoming data bit.
+     */
+    let redl = max(divider / 4, 1u);
+
+    bcm2835_i2c_writel(
+        &mut div.i2c_dev,
+        BCM2835_I2C_DEL,
+        (fedl << BCM2835_I2C_FEDL_SHIFT) | (redl << BCM2835_I2C_REDL_SHIFT),
+    );
+
+    /*
+     * Set the clock stretch timeout.
+     */
+    let clk_tout: u32;
+    if rate > 0xffff * 1000 / CLK_TOUT_MS {
+        clk_tout = 0xffff;
+    } else {
+        clk_tout = CLK_TOUT_MS * rate / 1000;
+    }
+
+    bcm2835_i2c_writel(&mut div.i2c_dev, BCM2835_I2C_CLKT, clk_tout);
+
+    Ok(())
+}
+
+impl kernel::Module for Bcm2835I2cDevice {
     fn init(_module: &'static ThisModule) -> Result<Self> {
         pr_info!("BCM2835 i2c bus device driver (init)\n");
 
-        Ok(Bcm2835I2cDev {})
+        Ok(Bcm2835I2cDevice {})
     }
 }
 
-impl Drop for Bcm2835I2cDev {
+impl Drop for Bcm2835I2cDevice {
     fn drop(&mut self) {
         pr_info!("BCM2835 i2c bus device driver (exit)\n");
     }

@@ -59,6 +59,6 @@ impl Drop for ClkHw {
 */
 
 // TODO: Implement clk_hw_register_clkdev
-unsafe fn clk_hw_register_clkdev() -> Result {}
+// unsafe fn clk_hw_register_clkdev() -> Result {}
 // TODO: Implement devm_clk_hw_register
-unsafe fn devm_clk_hw_register() -> Result {}
+// unsafe fn devm_clk_hw_register() -> Result {}
