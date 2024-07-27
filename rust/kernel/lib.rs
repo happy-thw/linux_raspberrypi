@@ -35,47 +35,47 @@ extern crate self as kernel;
 #[cfg(not(test))]
 #[cfg(not(testlib))]
 mod allocator;
-mod build_assert;
-pub mod cred;
-pub mod device;
-pub mod delay;
-pub mod error;
-pub mod driver;
-pub mod platform;
-pub mod file;
-pub mod fs;
-pub mod init;
-pub mod io_buffer;
-pub mod gpio;
-pub mod fwnode;
-pub mod io_mem;
 #[cfg(CONFIG_ARM_AMBA)]
 pub mod amba;
+mod build_assert;
+pub mod clk;
+pub mod clk_provider;
+pub mod completion;
+pub mod cred;
+pub mod delay;
+pub mod device;
+pub mod driver;
+pub mod error;
+pub mod file;
+pub mod fs;
+pub mod fwnode;
+pub mod gpio;
+pub mod init;
+pub mod io_buffer;
+pub mod io_mem;
 #[cfg(CONFIG_IOMMU_IO_PGTABLE)]
 pub mod io_pgtable;
 pub mod ioctl;
+pub mod iov_iter;
+pub mod irq;
 #[cfg(CONFIG_KUNIT)]
 pub mod kunit;
-pub mod of;
-pub mod iov_iter;
 pub mod mm;
+pub mod of;
 pub mod pages;
+pub mod platform;
 pub mod prelude;
 pub mod print;
+pub mod serial;
 mod static_assert;
 #[doc(hidden)]
 pub mod std_vendor;
 pub mod str;
 pub mod sync;
 pub mod task;
+pub mod timekeeping;
 pub mod types;
 pub mod user_ptr;
-pub mod completion;
-pub mod timekeeping;
-pub mod irq;
-pub mod clk;
-pub mod serial;
-pub mod clk_hw;
 
 #[doc(hidden)]
 pub use bindings;
@@ -125,7 +125,6 @@ impl ThisModule {
     pub const fn as_ptr(&self) -> *mut bindings::module {
         self.0
     }
-
 }
 /// Calculates the offset of a field from the beginning of the struct it belongs to.
 ///
