@@ -7,6 +7,7 @@
 use crate::{
     bindings,
     error::{to_result, Result},
+    str::CStr,
     types::Opaque,
 };
 
@@ -26,7 +27,7 @@ pub struct ClkDuty(bindings::clk_duty);
 /// # Invariants
 ///
 /// The pointer is valid.
-pub struct ClkHw(bindings::clk_hw);
+pub struct ClkHw(Opaque<bindings::clk_hw>);
 
 impl ClkHw {
     /// Create ClkHw from raw ptr
@@ -86,14 +87,15 @@ impl Drop for ClkHw {
 // unsafe fn devm_clk_hw_register() -> Result {}
 
 /// Represents `struct clk_ops`
-pub struct ClkOps(bindings::clk_ops);
+pub struct ClkOps(Opaque<bindings::clk_ops>);
 
 // TODO: Create (new) from functions ptr
 impl ClkOps {
     // TODO!
     pub fn from_raw(ptr: *const bindings::clk_ops) -> Self {
-        let ptr = ptr.cast::<Self>();
-        unsafe { &*ptr }
+        // let ptr = ptr.cast::<Self>();
+        // unsafe { *ptr }
+        unimplemented!()
     }
 
     #[inline]

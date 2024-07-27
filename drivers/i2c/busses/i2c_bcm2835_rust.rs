@@ -196,13 +196,13 @@ fn clk_bcm2835_i2c_set_rate(hw: &mut ClkHw, rate: u32, parent_rate: u32) -> Resu
     Ok(())
 }
 
-fn clk_bcm2835_i2c_round_rate(hw: &mut ClkHw, rate: u64, parent_rate: &mut u64) -> u64 {
+fn clk_bcm2835_i2c_round_rate(hw: &mut ClkHw, rate: u32, parent_rate: &mut u32) -> u32 {
     let divider = clk_bcm2835_i2c_calc_divider(rate, *parent_rate).unwrap();
 
-    *parent_rate.div_ceil(divider)
+    parent_rate.div_ceil(divider)
 }
 
-fn clk_bcm2835_i2c_recalc_rate(hw: &mut ClkHw, parent_rate: u64) -> u64 {
+fn clk_bcm2835_i2c_recalc_rate(hw: &mut ClkHw, parent_rate: u32) -> u32 {
     let div = to_clk_bcm2835_i2c(hw);
     let divider = bcm2835_i2c_readl(&mut div.i2c_dev, BCM2835_I2C_DIV);
 
