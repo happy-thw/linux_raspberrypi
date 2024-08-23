@@ -12,6 +12,7 @@ mod pin_data;
 mod pinned_drop;
 mod vtable;
 mod zeroable;
+mod foreach;
 
 use proc_macro::TokenStream;
 
@@ -353,4 +354,28 @@ pub fn paste(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(Zeroable)]
 pub fn derive_zeroable(input: TokenStream) -> TokenStream {
     zeroable::derive(input)
+}
+
+/// Repeat a fragment of code and provide a numerical index for the current repetition
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// foreach!(i in 0..10) {
+///     paste! {
+///         fn [<func $i>]() {
+///         }
+///     }
+/// }
+///
+/// foreach!(i in 8..=15) {
+///     paste! {
+///         struct [<Bit $i>]() {
+///         }
+///     }
+/// }
+/// ```
+#[proc_macro]
+pub fn foreach(input: TokenStream) -> TokenStream {
+    foreach::expand(input)
 }

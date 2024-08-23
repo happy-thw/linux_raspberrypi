@@ -57,4 +57,14 @@ config SAMPLE_RUST_HOSTPROGS
 
 	  If unsure, say N.
 
+config SAMPLE_RUST_I2C
+	tristate "i2c controller driver"
+	help
+	  This option builds the Rust i2c driver sample.
+
+	  To compile this as a module, choose M here:
+	  the module will be called rust_i2c_driver.
+
+	  If unsure, say N.
+
 endif # SAMPLES_RUST

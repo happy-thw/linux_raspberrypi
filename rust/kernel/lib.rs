@@ -19,6 +19,7 @@
 #![feature(c_size_t)]
 #![feature(dispatch_from_dyn)]
 #![feature(new_uninit)]
+#![feature(ptr_metadata)]
 #![feature(receiver_trait)]
 #![feature(unsize)]
 #![feature(const_mut_refs)]
@@ -75,6 +76,9 @@ pub mod timekeeping;
 pub mod irq;
 pub mod clk;
 pub mod serial;
+pub mod i2c;
+pub mod regmap;
+pub mod math;
 
 #[doc(hidden)]
 pub use bindings;

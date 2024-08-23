@@ -32,6 +32,11 @@ pub fn usleep_range(min: u64, max: u64) {
     unsafe{bindings::usleep_range_state(min, max, bindings::TASK_UNINTERRUPTIBLE)}
 }
 
+/// usleep
+pub fn usleep(us: u64) {
+    usleep_range(us >> 2 + 1, us);
+}
+
 /// Sleeps safely even with waitqueue interruptions.
 ///
 /// This function forwards the call to the C side `msleep` function. As a result,

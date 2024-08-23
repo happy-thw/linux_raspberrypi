@@ -6,7 +6,7 @@
 
 use crate::{
     bindings,
-    error::{Result, from_err_ptr, code::*,},
+    error::{Result, from_err_ptr, code::*, to_result},
     macros::pin_data,
     pin_init, pr_crit,
     str::CStr,
@@ -210,6 +210,45 @@ impl Device {
         } 
         Ok(Clk::from_raw(raw))
     }
+
+    /// Read u32 property from device
+    ///
+    /// # Safety
+    ///
+    /// `ptr` is valid, non-null, and has a non-zero reference count.
+    pub unsafe fn device_property_read_u32(&self, propname: &'static CStr, val: *mut u32) -> Result {
+        // Safety: FFI CALL
+        to_result(unsafe {bindings::device_property_read_u32_array(self.ptr, propname.as_char_ptr(), val, 1)})
+    }
+
+    /// Get clk from dev
+    pub fn devm_clk_get_optional(&self, id: &'static CStr) -> Result<&mut Clk> {
+        // SAFETY: call ffi and ptr is valid
+        let raw = unsafe {
+            from_err_ptr(bindings::devm_clk_get_optional(self.ptr, id.as_char_ptr()))?
+        };
+
+        if raw.is_null() {
+            dev_err!(self,"not found clk: {}",id);
+            return Err(ENODEV);
+        }
+        Ok(Clk::from_raw(raw))
+    }
+
+    /// Get default clk from dev
+    pub fn devm_clk_get_default_optional(&self) -> Result<&mut Clk> {
+        // SAFETY: call ffi and ptr is valid
+        let raw = unsafe {
+            from_err_ptr(bindings::devm_clk_get_optional(self.ptr, core::ptr::null()))?
+        };
+
+        if raw.is_null() {
+            dev_err!(self,"not found clk");
+            return Err(ENODEV);
+        }
+
+        Ok(Clk::from_raw(raw))
+    }    
 }
 
 

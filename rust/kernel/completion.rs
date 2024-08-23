@@ -11,6 +11,7 @@ use crate::{
     sync::LockClassKey,
     prelude::PinInit,
     bindings,
+    error::{code::*,Result}
 };
 
 /// Linux completion wrapper
@@ -96,19 +97,13 @@ impl Completion {
     }
 
     /// wait_for_completion_timeout: - waits for completion of a task (w/timeout)
-    /// Return: 0 if timed out, and positive (at least 1, or number of sec)
-    pub fn wait_for_completion_timeout_sec(&self, timeout: usize) -> usize {
+    pub fn wait_for_completion_timeout_sec(&self, timeout: usize) -> Result<usize> {
         let jiff = timeout * (bindings::HZ as usize);
         let left_jiff = self.wait_for_completion_timeout(jiff);
         if left_jiff == 0 {
-            return 0;
+            return Err(ETIMEDOUT);
         }
-
-        if left_jiff/(bindings::HZ as usize) == 0 {
-            return 1;
-        } else {
-            return left_jiff/(bindings::HZ as usize);
-        }
+        return Ok(left_jiff/(bindings::HZ as usize));
     }
 
     /// wait_for_completion_timeout: - waits for completion of a task (w/timeout)

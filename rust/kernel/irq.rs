@@ -64,7 +64,6 @@ impl<T: ForeignOwnable> InternalRegistration<T> {
             unsafe { T::from_foreign(ptr) };
         });
 
-        crate::pr_info!("call request_irq");
         // SAFETY: `name` and `ptr` remain valid as long as the registration is alive.
         to_result(unsafe {
             bindings::request_threaded_irq(
@@ -76,9 +75,7 @@ impl<T: ForeignOwnable> InternalRegistration<T> {
                 ptr,
             )
         })?;
-        crate::pr_info!("call request_irq end");
         guard.dismiss();
-        crate::pr_info!("return irq self");
         Ok(Self {
             irq,
             name,
@@ -94,7 +91,8 @@ impl<T: ForeignOwnable> Drop for InternalRegistration<T> {
         //
         // SAFETY: When `try_new` succeeds, the irq was successfully requested, so it is ok to free
         // it here.
-        unsafe { bindings::free_irq(self.irq, self.data) };
+        unsafe {
+            bindings::free_irq(self.irq, self.data) };
 
         // Free context data.
         //
@@ -138,6 +136,9 @@ pub trait Handler {
 /// ```
 pub struct Registration<H: Handler>(InternalRegistration<H::Data>);
 
+unsafe impl<H:Handler> Send for Registration<H> {}
+unsafe impl<H:Handler> Sync for Registration<H> {}
+
 impl<H: Handler> Registration<H> {
     /// Registers a new irq handler.
     ///
@@ -158,8 +159,6 @@ impl<H: Handler> Registration<H> {
         _irq: core::ffi::c_int,
         raw_data: *mut core::ffi::c_void,
     ) -> bindings::irqreturn_t {
-        crate::pr_info!("irq handler");
-
         // SAFETY: On registration, `into_foreign` was called, so it is safe to borrow from it here
         // because `from_foreign` is called only after the irq is unregistered.
         let data = unsafe {H::Data::borrow(raw_data) };
@@ -234,4 +233,3 @@ pub mod flags {
     /// Exclude from runnaway detection for IPI and similar handlers, depends on `PERCPU`.
     pub const NO_DEBUG: usize = bindings::IRQF_NO_DEBUG as _;
 }
-

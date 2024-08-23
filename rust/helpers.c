@@ -37,6 +37,7 @@
 #include <linux/highmem.h>
 #include <linux/uaccess.h>
 #include <linux/amba/bus.h>
+#include <linux/regmap.h>
 
 __noreturn void rust_helper_BUG(void)
 {
@@ -401,6 +402,87 @@ void rust_helper_clk_disable_unprepare(struct clk *clk)
 	return clk_disable_unprepare(clk);
 }
 EXPORT_SYMBOL_GPL(rust_helper_clk_disable_unprepare);
+
+#if IS_BUILTIN(CONFIG_REGMAP_I2C)
+struct regmap *rust_helper_regmap_init_i2c(struct i2c_client *i2c,
+					   const struct regmap_config *config)
+{
+	return regmap_init_i2c(i2c, config);
+}
+EXPORT_SYMBOL_GPL(rust_helper_regmap_init_i2c);
+#endif
+
+#if IS_BUILTIN(CONFIG_REGMAP)
+struct regmap *rust_helper_regmap_init(struct device *dev,
+					   const struct regmap_bus *bus,
+					   void *bus_context,
+					   const struct regmap_config *config)
+{
+	return regmap_init(dev, bus, bus_context, config);
+}
+EXPORT_SYMBOL_GPL(rust_helper_regmap_init);
+
+struct regmap *rust_helper_devm_regmap_init(struct device *dev,
+					   const struct regmap_bus *bus,
+					   void *bus_context,
+					   const struct regmap_config *config)
+{
+	return devm_regmap_init(dev, bus, bus_context, config);
+}
+EXPORT_SYMBOL_GPL(rust_helper_devm_regmap_init);
+#endif
+
+int rust_helper_regmap_field_write(struct regmap_field *field, unsigned int val)
+{
+	return regmap_field_write(field, val);
+}
+EXPORT_SYMBOL_GPL(rust_helper_regmap_field_write);
+
+int rust_helper_regmap_field_force_write(struct regmap_field *field,
+					 unsigned int val)
+{
+	return regmap_field_force_write(field, val);
+}
+EXPORT_SYMBOL_GPL(rust_helper_regmap_field_force_write);
+
+int rust_helper_regmap_field_update_bits(struct regmap_field *field,
+					 unsigned int mask, unsigned int val)
+{
+	return regmap_field_update_bits(field, mask, val);
+}
+EXPORT_SYMBOL_GPL(rust_helper_regmap_field_update_bits);
+
+int rust_helper_regmap_field_set_bits(struct regmap_field *field,
+				      unsigned int bits)
+{
+	return regmap_field_set_bits(field, bits);
+}
+EXPORT_SYMBOL_GPL(rust_helper_regmap_field_set_bits);
+
+int rust_helper_regmap_field_clear_bits(struct regmap_field *field,
+					unsigned int bits)
+{
+	return regmap_field_clear_bits(field, bits);
+}
+EXPORT_SYMBOL_GPL(rust_helper_regmap_field_clear_bits);
+
+int rust_helper_regmap_field_force_update_bits(struct regmap_field *field,
+					       unsigned int mask,
+						unsigned int val)
+{
+	return regmap_field_force_update_bits(field, mask, val);
+}
+EXPORT_SYMBOL_GPL(rust_helper_regmap_field_force_update_bits);
+
+int rust_helper_regmap_field_read_poll_timeout(struct regmap_field *field,
+					    unsigned int val,
+						unsigned int cond,
+						unsigned long sleep_us,
+						unsigned long timeout_us)
+{
+	return regmap_field_read_poll_timeout(field, val, cond, sleep_us, timeout_us);
+}
+EXPORT_SYMBOL_GPL(rust_helper_regmap_field_read_poll_timeout);
 
 /*
  * `bindgen` binds the C `size_t` type as the Rust `usize` type, so we can

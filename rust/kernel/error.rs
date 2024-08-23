@@ -249,6 +249,16 @@ pub fn to_result(err: core::ffi::c_int) -> Result {
     }
 }
 
+/// Converts an integer as returned by a C kernel function to an error if it's negative, and
+/// `Ok(int)` otherwise.
+pub fn to_result_i32(err: core::ffi::c_int) -> Result<i32> {
+    if err < 0 {
+        Err(Error::from_errno(err))
+    } else {
+        Ok(err as i32)
+    }
+}
+
 /// Transform a kernel "error pointer" to a normal pointer.
 ///
 /// Some kernel C API functions return an "error pointer" which optionally

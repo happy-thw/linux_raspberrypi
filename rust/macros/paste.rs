@@ -2,14 +2,22 @@
 
 use proc_macro::{Delimiter, Group, Ident, Spacing, Span, TokenTree};
 
-fn concat(tokens: &[TokenTree], group_span: Span) -> TokenTree {
+fn process_tokens_into_segments(tokens: &[TokenTree]) -> (Vec<(String, Span)>, Option<Span>) {
     let mut tokens = tokens.iter();
     let mut segments = Vec::new();
     let mut span = None;
     loop {
         match tokens.next() {
             None => break,
-            Some(TokenTree::Literal(lit)) => segments.push((lit.to_string(), lit.span())),
+            Some(TokenTree::Literal(lit)) => {
+                // Allow us to concat string literals by stripping quotes
+                let mut value = lit.to_string();
+                if value.starts_with('"') && value.ends_with('"') {
+                    value.remove(0);
+                    value.pop();
+                }
+                segments.push((value, lit.span()));
+            }
             Some(TokenTree::Ident(ident)) => {
                 let mut value = ident.to_string();
                 if value.starts_with("r#") {
@@ -38,10 +46,29 @@ fn concat(tokens: &[TokenTree], group_span: Span) -> TokenTree {
                 };
                 segments.push((value, sp));
             }
+            Some(TokenTree::Group(group)) if group.delimiter() == Delimiter::None => {
+                let group_tokens: Vec<_> = group.stream().into_iter().collect();
+                let (group_segments, group_span) = process_tokens_into_segments(&group_tokens);
+                segments.extend(group_segments);
+
+                assert!(
+                    !(span.is_some() && group_span.is_some()),
+                    "span modifier should only appear at most once"
+                );
+
+                if group_span.is_some() {
+                    span = group_span;
+                }
+            }
             _ => panic!("unexpected token in paste segments"),
         };
     }
 
+    (segments, span)
+}
+
+fn concat(tokens: &[TokenTree], group_span: Span) -> TokenTree {
+    let (segments, span) = process_tokens_into_segments(tokens);
     let pasted: String = segments.into_iter().map(|x| x.0).collect();
     TokenTree::Ident(Ident::new(&pasted, span.unwrap_or(group_span)))
 }
